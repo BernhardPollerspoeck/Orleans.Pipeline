@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Orleans.Configuration;
 using Orleans.Pipe.Client;
 using Orleans.Pipe.Client.Services;
-using Orleans.Pipe.Contract;
+using Orleans.Pipeline.Client;
 
 var builder = Host.CreateApplicationBuilder();
 

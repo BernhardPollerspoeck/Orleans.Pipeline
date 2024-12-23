@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Hosting;
-using Orleans.Pipe.Contract;
+using Orleans.Pipeline.Client;
 
 namespace Orleans.Pipe.Client.Services;
 

@@ -1,10 +1,11 @@
 ﻿using Microsoft.Extensions.Hosting;
-using Orleans.Pipe.Contract;
+using Orleans.Pipeline.Client;
 
 namespace Orleans.Pipe.Client.Services;
 
 internal class PipeShutdownClient(
-    IOrleansPipelineClient pipelineClient) : IHostedService
+    IOrleansPipelineClient pipelineClient) 
+    : IHostedService
 {
     public Task StartAsync(CancellationToken cancellationToken)
     {

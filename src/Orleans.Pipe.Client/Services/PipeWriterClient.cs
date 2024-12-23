@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Orleans.Pipe.Contract;
+using Orleans.Pipeline.Client;
 
 namespace Orleans.Pipe.Client.Services;
 
@@ -11,13 +11,12 @@ internal class PipeWriterClient(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await Task.Yield();
-
         var pipe = pipelineClient.GetPipe<string, string>("TestPipe 1");
         while (!stoppingToken.IsCancellationRequested)
         {
-            logger.LogInformation("Sending {input}", "Hello, World!");
-            await pipe.Writer.WriteAsync($"Current time is {DateTime.Now.TimeOfDay}", stoppingToken);
+            var message = $"Current time is {DateTime.Now.TimeOfDay}";
+            logger.LogInformation("Sending {input}", message);
+            await pipe.Writer.WriteAsync(message, stoppingToken);
             try
             {
                 await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
