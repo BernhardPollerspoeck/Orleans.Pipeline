@@ -46,11 +46,4 @@ public abstract class OrleansPipeGrain<TToServer, TFromServer>(
         _observers.Unsubscribe(observer);
         return Task.CompletedTask;
     }
-    public async Task RenewSubscription(
-        IOrleansPipeObserver<TFromServer> oldObserver,
-        IOrleansPipeObserver<TFromServer> newObserver)
-    {
-        await Unsubscribe(oldObserver);
-        await Subscribe(newObserver);
-    }
 }
