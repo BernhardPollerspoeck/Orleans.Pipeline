@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orleans.Pipeline.Shared", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orleans.Pipeline.Server", "src\Orleans.Pipeline.Server\Orleans.Pipeline.Server.csproj", "{3E0E5A83-CAD5-4769-BD37-4FF2EC00424A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orleans.Pipe.Contract", "src\Orleans.Pipe.Contract\Orleans.Pipe.Contract.csproj", "{C741B19A-A9A7-458C-ABE7-3245161FF189}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{3E0E5A83-CAD5-4769-BD37-4FF2EC00424A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E0E5A83-CAD5-4769-BD37-4FF2EC00424A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E0E5A83-CAD5-4769-BD37-4FF2EC00424A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C741B19A-A9A7-458C-ABE7-3245161FF189}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C741B19A-A9A7-458C-ABE7-3245161FF189}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C741B19A-A9A7-458C-ABE7-3245161FF189}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C741B19A-A9A7-458C-ABE7-3245161FF189}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -64,5 +70,6 @@ Global
 		{BA0D9E74-A95F-412D-9A29-32605BD1D28C} = {D5845159-1AA8-46A8-BAE7-81459E03B8AC}
 		{5FB038D4-D394-4201-BBC3-F499D92570CB} = {D5845159-1AA8-46A8-BAE7-81459E03B8AC}
 		{3E0E5A83-CAD5-4769-BD37-4FF2EC00424A} = {D5845159-1AA8-46A8-BAE7-81459E03B8AC}
+		{C741B19A-A9A7-458C-ABE7-3245161FF189} = {4FC97AF5-A084-41A7-9E90-E55E43AE6895}
 	EndGlobalSection
 EndGlobal

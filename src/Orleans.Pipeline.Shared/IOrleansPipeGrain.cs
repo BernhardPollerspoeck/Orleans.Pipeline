@@ -11,9 +11,4 @@ public interface IOrleansPipeGrain<TToServer, TFromServer> : IGrainWithStringKey
 
     [Alias("Unsubscribe")]
     Task Unsubscribe(IOrleansPipeObserver<TFromServer> observer);
-
-    [Alias("RenewSubscription")]
-    Task RenewSubscription(
-        IOrleansPipeObserver<TFromServer> oldObserver,
-        IOrleansPipeObserver<TFromServer> newObserver);
 }
