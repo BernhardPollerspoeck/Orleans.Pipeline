@@ -48,11 +48,11 @@ internal class OrleansPipe<TToServer, TFromServer>(
         {
             // Cancel any ongoing operations
             _writer.Writer.Complete();
-            await (_writerTask ?? Task.CompletedTask);
+            await (_writerTask ?? Task.CompletedTask).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
             _writerStoppingTokenSource.Cancel();
 
             _reader.Writer.Complete();
-            await (_observerTask ?? Task.CompletedTask);
+            await (_observerTask ?? Task.CompletedTask).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
             _observerStoppingTokenSource.Cancel();
 
             // Unsubscribe from the grain if initialized
