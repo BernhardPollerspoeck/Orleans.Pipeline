@@ -9,11 +9,16 @@ public abstract class OrleansPipeGrain<TToServer, TFromServer>(
     : Grain,
     IOrleansPipeGrain<TToServer, TFromServer>
 {
-
+    #region fields
     private readonly ObserverManager<IOrleansPipeObserver<TFromServer>> _observers
         = new(TimeSpan.FromMinutes(2), logger);
-    protected abstract Task OnData(TToServer data);
+    #endregion
 
+    #region abstract
+    protected abstract Task OnData(TToServer data);
+    #endregion
+
+    #region IOrleansPipeObserver<TFromServer>
     protected Task Notify(TFromServer data)
     {
         return _observers.Notify(observer
@@ -24,7 +29,9 @@ public abstract class OrleansPipeGrain<TToServer, TFromServer>(
                 Metadata = this.GetPrimaryKeyString(),
             }));
     }
+    #endregion
 
+    #region IOrleansPipeGrain<TToServer, TFromServer>
     public Task Write(PipeTransferItem<TToServer> item)
     {
         logger.LogInformation("Received transfer with mode {mode}", item.Mode);
@@ -46,4 +53,5 @@ public abstract class OrleansPipeGrain<TToServer, TFromServer>(
         _observers.Unsubscribe(observer);
         return Task.CompletedTask;
     }
+    #endregion
 }

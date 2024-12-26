@@ -12,6 +12,7 @@ internal class OrleansPipe<TToServer, TFromServer>(
     : IOrleansPipe<TToServer, TFromServer>
     , IOrleansPipeObserver<TFromServer>
 {
+    #region fields
     private readonly Channel<TToServer> _writer = Channel.CreateUnbounded<TToServer>();
     private readonly Channel<TFromServer> _reader = Channel.CreateUnbounded<TFromServer>();
 
@@ -23,6 +24,7 @@ internal class OrleansPipe<TToServer, TFromServer>(
 
     private Task? _writerTask;
     private readonly CancellationTokenSource _writerStoppingTokenSource = new();
+    #endregion
 
     #region IOleansPipe<TToServer, TFromServer>
     public ChannelReader<TFromServer> Reader => _reader.Reader;
@@ -85,6 +87,7 @@ internal class OrleansPipe<TToServer, TFromServer>(
     }
     #endregion
 
+    #region runner tasks
     private async Task RunWriter(CancellationToken cancellationToken)
     {
         try
@@ -123,4 +126,5 @@ internal class OrleansPipe<TToServer, TFromServer>(
             logger.LogInformation("Observer stopped");
         }
     }
+    #endregion
 }

@@ -8,8 +8,11 @@ internal class OrleansPipelineClient(
     ILoggerFactory loggerFactory)
     : IOrleansPipelineClient
 {
+    #region fields
     private readonly ConcurrentDictionary<string, List<object>> _pipes = [];
+    #endregion
 
+    #region IOrleansPipelineClient
     public IOrleansPipe<TToServer, TFromServer> GetPipe<TToServer, TFromServer>(string pipeKey)
     {
         // Get or add the list of pipes for the given key
@@ -32,7 +35,9 @@ internal class OrleansPipelineClient(
             return resultPipe;
         }
     }
+    #endregion
 
+    #region factory 
     private OrleansPipe<TToServer, TFromServer> CreatePipe<TToServer, TFromServer>(string id)
     {
         return new OrleansPipe<TToServer, TFromServer>(
@@ -40,4 +45,5 @@ internal class OrleansPipelineClient(
             loggerFactory.CreateLogger<OrleansPipe<TToServer, TFromServer>>(),
             id);
     }
+    #endregion
 }
