@@ -8,7 +8,7 @@ namespace Orleans.Pipeline.Server;
 public abstract class OrleansPipeGrain<TToServer, TFromServer>(ILogger logger)
     : Grain, IOrleansPipeGrain<TToServer, TFromServer>
 {
-    private static readonly TimeSpan HeartbeatPeriod = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan HeartbeatPeriod = PipeConstants.HeartbeatInterval; 
     private static readonly TimeSpan HeartbeatTimeout = TimeSpan.FromSeconds(2);
 
     private IGrainTimer? _heartbeatTimer;
@@ -124,7 +124,7 @@ public abstract class OrleansPipeGrain<TToServer, TFromServer>(ILogger logger)
             _heartbeatCts = new();
         }
 
-        if (logger.IsEnabled(LogLevel.Trace) || true)
+        if (logger.IsEnabled(LogLevel.Trace))
         {
             logger.LogTrace("Heartbeat round finished for grain = {Key}", key);
         }

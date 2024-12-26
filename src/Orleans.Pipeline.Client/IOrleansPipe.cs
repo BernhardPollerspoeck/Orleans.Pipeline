@@ -1,9 +1,4 @@
-﻿using Orleans.Pipeline.Shared;
-using System.Threading.Channels;
-
-namespace Orleans.Pipeline.Client;
-
-
+﻿namespace Orleans.Pipeline.Client;
 
 /// <summary>
 /// The actual workable pipe
@@ -12,10 +7,9 @@ namespace Orleans.Pipeline.Client;
 /// <typeparam name="TFromServer"></typeparam>
 public interface IOrleansPipe<TToServer, TFromServer>
 {
-    ChannelReader<TFromServer> Reader { get; }
-    ChannelWriter<TToServer> Writer { get; }
-
     Task Start(CancellationToken token);
     Task Stop(CancellationToken token);
-}
 
+    Task<OrleansPipeStatus> TryWriteAsync(TToServer item, CancellationToken cancellationToken = default);
+    IAsyncEnumerable<TFromServer> ReadAllAsync(CancellationToken cancellationToken = default);
+}

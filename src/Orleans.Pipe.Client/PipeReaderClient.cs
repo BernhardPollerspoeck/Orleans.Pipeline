@@ -11,9 +11,8 @@ internal class PipeReaderClient(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-
         var pipe = pipelineClient.GetPipe<string, string>("TestPipe 1");
-        await foreach (var result in pipe.Reader.ReadAllAsync(stoppingToken))
+        await foreach (var result in pipe.ReadAllAsync(stoppingToken))
         {
             logger.LogInformation("Received: {result}", result);
         }
