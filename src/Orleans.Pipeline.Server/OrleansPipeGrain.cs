@@ -9,7 +9,7 @@ public abstract class OrleansPipeGrain<TToServer, TFromServer>(ILogger logger)
     : Grain, IOrleansPipeGrain<TToServer, TFromServer>
 {
     private static readonly TimeSpan HeartbeatPeriod = TimeSpan.FromSeconds(5);
-    private static readonly TimeSpan HeartbeatTimeout = TimeSpan.FromSeconds(25);
+    private static readonly TimeSpan HeartbeatTimeout = TimeSpan.FromSeconds(2);
 
     private IGrainTimer? _heartbeatTimer;
     private CancellationTokenSource _heartbeatCts = new();
