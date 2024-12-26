@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Orleans.Configuration;
-using Orleans.Pipe.Client;
 using Orleans.Pipe.Client.Services;
 using Orleans.Pipeline.Client;
 

@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Orleans.Pipeline.Client;
 
-namespace Orleans.Pipe.Client;
+namespace Orleans.Pipe.Client.Services;
 
 internal class PipeReaderClient(
     IOrleansPipelineClient pipelineClient,
