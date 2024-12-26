@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Orleans.Pipeline.Shared;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 
 namespace Orleans.Pipeline.Client;
@@ -23,12 +24,14 @@ internal class OrleansPipe<TToServer, TFromServer>(
     private Task? _writerTask;
     private Task? _observerTask;
     private long _lastHeartbeatTicks = 0;
-    private volatile OrleansPipeStatus _status = OrleansPipeStatus.Broken;
+    private OrleansPipeStatus _status = OrleansPipeStatus.Broken;
     private readonly SemaphoreSlim _reconnectionSemaphore = new(1, 1);
     private readonly CancellationTokenSource _observerStoppingTokenSource = new();
     private static readonly long ExpectedHeartbeatIntervalTicks = PipeConstants.HeartbeatInterval.Ticks;
     private static readonly TimeSpan ReconnectionDelay = TimeSpan.FromMilliseconds(100);
     private const int MaxReconnectionAttempts = 3;
+
+    public event Action<OrleansPipeStatus>? OnStatusChanged;
 
     public async Task Start(CancellationToken token)
     {
@@ -73,11 +76,11 @@ internal class OrleansPipe<TToServer, TFromServer>(
         finally
         {
             _observerStoppingTokenSource.Dispose();
-            _status = OrleansPipeStatus.Broken;
+            UpdateStatus(OrleansPipeStatus.Broken);
         }
     }
 
-    public async Task<OrleansPipeStatus> TryWriteAsync(TToServer item, CancellationToken cancellationToken)
+    public async Task<bool> TryWriteAsync(TToServer item, CancellationToken cancellationToken)
     {
         if (_status == OrleansPipeStatus.Broken)
         {
@@ -87,16 +90,18 @@ internal class OrleansPipe<TToServer, TFromServer>(
         if ((DateTime.UtcNow.Ticks - Interlocked.Read(ref _lastHeartbeatTicks)) < ExpectedHeartbeatIntervalTicks)
         {
             await _writer.Writer.WriteAsync(item, cancellationToken);
-            return OrleansPipeStatus.Healthy;
+            return true;
         }
 
         if (!await _reconnectionSemaphore.WaitAsync(0, cancellationToken))
         {
-            return OrleansPipeStatus.Recovering; // Another reconnection attempt is in progress.
+            return false; // Another reconnection attempt is in progress.
         }
 
         try
         {
+            UpdateStatus(OrleansPipeStatus.Recovering);
+
             for (int i = 0; i < MaxReconnectionAttempts; i++)
             {
                 try 
@@ -112,18 +117,20 @@ internal class OrleansPipe<TToServer, TFromServer>(
                 Interlocked.Exchange(ref _lastHeartbeatTicks, DateTime.UtcNow.Ticks);
                 await _writer.Writer.WriteAsync(item, cancellationToken);
 
-                return OrleansPipeStatus.Healthy;
+                UpdateStatus(OrleansPipeStatus.Healthy);
+
+                return true;
             }
+
+            await Stop(CancellationToken.None); // This will stop the reader too, so clients can gracefully give up on this pipe.
+            UpdateStatus(OrleansPipeStatus.Broken);
+
+            return false;
         }
         finally
         {
             _reconnectionSemaphore.Release();
         }
-
-        // This will stop the reader too, so clients can gracefully give up on this pipe
-        await Stop(CancellationToken.None); 
-
-        return OrleansPipeStatus.Broken;
     }
 
     public IAsyncEnumerable<TFromServer> ReadAllAsync(CancellationToken cancellationToken) =>
@@ -146,6 +153,14 @@ internal class OrleansPipe<TToServer, TFromServer>(
                 throw new NotSupportedException($"The transfer mode '{message.Mode}' is not supported");
         }
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void UpdateStatus(OrleansPipeStatus status)
+    {
+        Interlocked.Exchange(ref Unsafe.As<OrleansPipeStatus, int>(ref _status), (int)status);
+        Interlocked.CompareExchange(ref OnStatusChanged, null, null)?.Invoke(status);
+    }
+
 
     private async Task RunWriter(CancellationToken cancellationToken)
     {

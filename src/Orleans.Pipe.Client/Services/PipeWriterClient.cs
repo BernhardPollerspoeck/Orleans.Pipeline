@@ -12,6 +12,8 @@ internal class PipeWriterClient(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var pipe = pipelineClient.GetPipe<string, string>("TestPipe 1");
+        pipe.OnStatusChanged += Pipe_OnStatusChanged;
+
         while (!stoppingToken.IsCancellationRequested)
         {
             var message = $"Current time is {DateTime.Now.TimeOfDay}";
@@ -21,20 +23,14 @@ internal class PipeWriterClient(
             {
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    var status = await pipe.TryWriteAsync(message, stoppingToken);
-                    if (status == OrleansPipeStatus.Healthy)
+                    var success = await pipe.TryWriteAsync(message, stoppingToken);
+                    if (success)
                     {
                         logger.LogInformation("Successfully wrote to pipe.");
                         break;
                     }
 
-                    if (status == OrleansPipeStatus.Broken)
-                    {
-                        logger.LogError("Pipe is broken. Giving up on writing.");
-                        return; 
-                    }
-
-                    logger.LogWarning("Pipe is recovering. Retrying...");
+                    logger.LogWarning("Couldnt write to pipe. Retrying after a while.");
                     await Task.Delay(100, stoppingToken);
                 }
             }
@@ -50,7 +46,11 @@ internal class PipeWriterClient(
 
             await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
         }
+
+        pipe.OnStatusChanged -= Pipe_OnStatusChanged;
     }
 
+    private void Pipe_OnStatusChanged(OrleansPipeStatus status) =>
+        logger.LogInformation("Pipe status changed to {Stauts}", status.ToString());
 }
 

@@ -8,6 +8,12 @@
 public interface IOrleansPipe<TToServer, TFromServer>
 {
     /// <summary>
+    /// Notification when status of the pipe changes.
+    /// </summary>
+    /// <remarks>Ensure exceptions are caught at call site</remarks>
+    event Action<OrleansPipeStatus> OnStatusChanged;
+
+    /// <summary>
     /// Starts the pipe
     /// </summary>
     /// <param name="token"></param>
@@ -22,14 +28,14 @@ public interface IOrleansPipe<TToServer, TFromServer>
     Task Stop(CancellationToken token);
 
     /// <summary>
-    /// Try to write <paramref name="item"/>. Ensure to check upon the returned <see cref="OrleansPipeStatus"/>
+    /// Try to write <paramref name="item"/>.
     /// </summary>
     /// <param name="item"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <remarks>Dont write to a pipe if it returns <see cref="OrleansPipeStatus.Broken"/></remarks>
     /// <exception cref="BrokenOrleansPipeException"/>
-    Task<OrleansPipeStatus> TryWriteAsync(TToServer item, CancellationToken cancellationToken = default);
+    Task<bool> TryWriteAsync(TToServer item, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Consume pipe items.
