@@ -15,7 +15,6 @@ public interface IOrleansPipeGrain<TToServer, TFromServer> : IGrainWithStringKey
     /// </summary>
     /// <param name="item"></param>
     /// <returns></returns>
-    [Alias("Write")]
     [Alias("Write"), AlwaysInterleave]
     Task Write(PipeTransferItem<TToServer> item);
 
