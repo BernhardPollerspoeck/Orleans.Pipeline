@@ -18,11 +18,9 @@ internal class OrleansPipe<TToServer, TFromServer>(
     [AllowNull] private IOrleansPipeGrain<TToServer, TFromServer> _grain;
     [AllowNull] private IOrleansPipeObserver<TFromServer> _observer;
 
+    private Task? _writerTask;
     private Task? _observerTask;
     private readonly CancellationTokenSource _observerStoppingTokenSource = new();
-
-    private Task? _writerTask;
-    private readonly CancellationTokenSource _writerStoppingTokenSource = new();
 
     #region IOleansPipe<TToServer, TFromServer>
     public ChannelReader<TFromServer> Reader => _reader.Reader;
@@ -49,10 +47,10 @@ internal class OrleansPipe<TToServer, TFromServer>(
             // Cancel any ongoing operations
             _writer.Writer.Complete();
             await (_writerTask ?? Task.CompletedTask).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
-            _writerStoppingTokenSource.Cancel();
 
             _reader.Writer.Complete();
             await (_observerTask ?? Task.CompletedTask).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+
             _observerStoppingTokenSource.Cancel();
 
             // Unsubscribe from the grain if initialized
@@ -68,7 +66,6 @@ internal class OrleansPipe<TToServer, TFromServer>(
         }
         finally
         {
-            _writerStoppingTokenSource.Dispose();
             _observerStoppingTokenSource.Dispose();
         }
     }
@@ -89,8 +86,7 @@ internal class OrleansPipe<TToServer, TFromServer>(
     {
         try
         {
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _writerStoppingTokenSource.Token);
-            await foreach (var result in _writer.Reader.ReadAllAsync(linkedCts.Token))
+            await foreach (var result in _writer.Reader.ReadAllAsync(cancellationToken))
             {
                 var writeData = new PipeTransferItem<TToServer>
                 {
