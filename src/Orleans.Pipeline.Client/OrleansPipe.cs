@@ -20,9 +20,12 @@ internal class OrleansPipe<TToServer, TFromServer>(
 
     private Task? _writerTask;
     private Task? _observerTask;
+    private DateTime _lastHeartbeat = DateTime.MinValue;
     private readonly CancellationTokenSource _observerStoppingTokenSource = new();
+    private static readonly TimeSpan ExpectedHeartbeatInterval = TimeSpan.FromSeconds(5);
 
     #region IOleansPipe<TToServer, TFromServer>
+
     public ChannelReader<TFromServer> Reader => _reader.Reader;
     public ChannelWriter<TToServer> Writer => _writer.Writer;
 
@@ -62,7 +65,7 @@ internal class OrleansPipe<TToServer, TFromServer>(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "An error occurred during Stopping");
+            logger.LogError(ex, "An error occurred during stopping.");
         }
         finally
         {
@@ -73,13 +76,25 @@ internal class OrleansPipe<TToServer, TFromServer>(
     #endregion
 
     #region IOrleansPipeObserver<TFromServer>
+
     public async Task ReceiveMessage(PipeTransferItem<TFromServer> message)
     {
-        if (message is { Mode: TransferMode.Data, Item: not null })
+        switch (message.Mode)
         {
-            await _reader.Writer.WriteAsync(message.Item);
+            case TransferMode.Data:
+                {
+                    ArgumentNullException.ThrowIfNull(message.Item, "Item must no be null using data transfer mode");
+                    await _reader.Writer.WriteAsync(message.Item);
+                }
+                break;
+            case TransferMode.Heartbeat: 
+                _lastHeartbeat = DateTime.UtcNow;
+                break;
+            default:
+                throw new NotSupportedException($"The transfer mode '{message.Mode}' is not supported");
         }
     }
+
     #endregion
 
     private async Task RunWriter(CancellationToken cancellationToken)
@@ -88,20 +103,30 @@ internal class OrleansPipe<TToServer, TFromServer>(
         {
             await foreach (var result in _writer.Reader.ReadAllAsync(cancellationToken))
             {
+                if ((DateTime.UtcNow - _lastHeartbeat) > ExpectedHeartbeatInterval)
+                {
+                    //TODO: Continue
+                }
+
                 var writeData = new PipeTransferItem<TToServer>
                 {
                     Mode = TransferMode.Data,
                     Item = result,
                     Metadata = _grain.GetPrimaryKeyString(),
                 };
+
                 await _grain.Write(writeData);
             }
         }
         catch (OperationCanceledException)
         {
-            logger.LogInformation("Writer stopped");
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation("Writer stopped");
+            }
         }
     }
+
     private async Task RunObserver(CancellationToken cancellationToken)
     {
         try
@@ -110,13 +135,19 @@ internal class OrleansPipe<TToServer, TFromServer>(
             while (!linkedCts.Token.IsCancellationRequested)
             {
                 await Task.Delay(TimeSpan.FromSeconds(100), linkedCts.Token);
-                logger.LogInformation("Renewing subscription");
+                if (logger.IsEnabled(LogLevel.Information))
+                {
+                    logger.LogInformation("Renewing subscription");
+                }
                 await _grain.Subscribe(_observer);
             }
         }
         catch (OperationCanceledException)
         {
-            logger.LogInformation("Observer stopped");
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                logger.LogInformation("Observer stopped");
+            }
         }
     }
 }
