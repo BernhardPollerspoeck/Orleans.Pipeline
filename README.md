@@ -1,6 +1,14 @@
 # Orleans.Pipeline
 Orleans.Pipeline is a library that adds a 2-way communication pipeline to Orleans.
 
+![Release](https://github.com/BernhardPollerspoeck/Orleans.Pipeline/.github/workflows/nuget.yml/badge.svg)
+![Preview](https://github.com/BernhardPollerspoeck/Orleans.Pipeline/.github/workflows/nuget-preview.yml/badge.svg)
+ 
+---
+### Version schema
+
+Orleans.Pipeline extends the Orleans Major.Minor.Patch schema for a `Lib`, so a Version of `9.0.1.2` represents the 2nd release for `9.0.1` Orleans Dependencies. The `Lib` segment never resets, so a `8.0.1.2` is the same Pipeline Version but just for Orleans `8.0.1` Dependencies.
+
 ---
 ## HowTo setup
 
