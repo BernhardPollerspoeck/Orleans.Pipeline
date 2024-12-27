@@ -1,8 +1,4 @@
-﻿using System.Threading.Channels;
-
-namespace Orleans.Pipeline.Client;
-
-
+﻿namespace Orleans.Pipeline.Client;
 
 /// <summary>
 /// The actual workable pipe
@@ -12,13 +8,10 @@ namespace Orleans.Pipeline.Client;
 public interface IOrleansPipe<TToServer, TFromServer>
 {
     /// <summary>
-    /// The reader for incomming data
+    /// Notification when status of the pipe changes.
     /// </summary>
-    ChannelReader<TFromServer> Reader { get; }
-    /// <summary>
-    /// The writer for outgoing data
-    /// </summary>
-    ChannelWriter<TToServer> Writer { get; }
+    /// <remarks>Ensure exceptions are caught at call site</remarks>
+    event Action<OrleansPipeStatus> OnStatusChanged;
 
     /// <summary>
     /// Starts the pipe
@@ -33,5 +26,21 @@ public interface IOrleansPipe<TToServer, TFromServer>
     /// <param name="token"></param>
     /// <returns></returns>
     Task Stop(CancellationToken token);
-}
 
+    /// <summary>
+    /// Try to write <paramref name="item"/>.
+    /// </summary>
+    /// <param name="item"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <remarks>Dont write to a pipe if it returns <see cref="OrleansPipeStatus.Broken"/></remarks>
+    /// <exception cref="BrokenOrleansPipeException"/>
+    Task<bool> TryWriteAsync(TToServer item, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Consume pipe items.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    IAsyncEnumerable<TFromServer> ReadAllAsync(CancellationToken cancellationToken = default);
+}

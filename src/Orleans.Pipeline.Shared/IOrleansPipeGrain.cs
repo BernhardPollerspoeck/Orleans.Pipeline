@@ -1,4 +1,6 @@
-﻿namespace Orleans.Pipeline.Shared;
+﻿using Orleans.Concurrency;
+
+namespace Orleans.Pipeline.Shared;
 
 /// <summary>
 /// The pipe grain interface for server side access
@@ -13,7 +15,7 @@ public interface IOrleansPipeGrain<TToServer, TFromServer> : IGrainWithStringKey
     /// </summary>
     /// <param name="item"></param>
     /// <returns></returns>
-    [Alias("Write")]
+    [Alias("Write"), AlwaysInterleave]
     Task Write(PipeTransferItem<TToServer> item);
 
     /// <summary>
