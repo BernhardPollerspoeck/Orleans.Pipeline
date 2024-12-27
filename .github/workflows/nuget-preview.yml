@@ -18,6 +18,4 @@ jobs:
     - name: Pack
       run: dotnet pack nuget.sln --configuration Release /p:Version=${VERSION} --output .
     - name: Push
-      run: dotnet nuget push **.*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${secrets.NUGET_API_KEY }} --skip-duplicate
-      env:
-        GITHUB_TOKEN: ${{ secrets.NUGET_API_KEY }}
+      run: dotnet nuget push **.*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
