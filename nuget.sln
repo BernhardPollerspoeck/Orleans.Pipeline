@@ -12,6 +12,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2E351288-9672-4F0C-ABEF-40F74C2BD3E5}"
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\nuget-preview.yml = .github\workflows\nuget-preview.yml
+		.github\workflows\nuget.yml = .github\workflows\nuget.yml
 	EndProjectSection
 EndProject
 Global
