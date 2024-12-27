@@ -30,6 +30,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "00_Infra", "00_Infra", "{EDA83368-DE4C-4B93-9103-3D6E948E96D8}"
 	ProjectSection(SolutionItems) = preProject
 		LICENSE.txt = LICENSE.txt
+		.github\workflows\nuget-preview.yml = .github\workflows\nuget-preview.yml
 		README.md = README.md
 	EndProjectSection
 EndProject
