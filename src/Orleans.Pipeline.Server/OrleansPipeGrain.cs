@@ -51,7 +51,10 @@ public abstract class OrleansPipeGrain<TToServer, TFromServer>(ILogger logger)
 
     public async Task Write(PipeTransferItem<TToServer> item)
     {
-        logger.LogInformation("Received transfer with mode {mode}", item.Mode);
+        if (logger.IsEnabled(LogLevel.Information))
+        {
+            logger.LogInformation("Received transfer with mode {mode}", item.Mode);
+        }
 
         var task = item switch
         {
