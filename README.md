@@ -1,9 +1,12 @@
 # Orleans.Pipeline
 Orleans.Pipeline is a library that adds a 2-way communication pipeline to Orleans.
 
-![Release](https://github.com/BernhardPollerspoeck/Orleans.Pipeline/workflows/nuget/badge.svg)
-![Preview](https://github.com/BernhardPollerspoeck/Orleans.Pipeline/workflows/nuget-preview/badge.svg)
- 
+![Orleans.Pipeline.Shared](https://img.shields.io/nuget/v/Orleans.Pipeline.Shared?label=Orleans.Pipeline.Shared&color=28A745)
+
+![Orleans.Pipeline.Client](https://img.shields.io/nuget/v/Orleans.Pipeline.Client?label=Orleans.Pipeline.Client&color=28A745)
+
+![Orleans.Pipeline.Server](https://img.shields.io/nuget/v/Orleans.Pipeline.Server?label=Orleans.Pipeline.Server&color=28A745)
+
 ---
 ### Version schema
 
