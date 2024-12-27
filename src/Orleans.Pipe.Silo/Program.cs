@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Orleans.Configuration;
+using Orleans.Pipeline.Server;
 using System.Net;
 
 var builder = Host.CreateApplicationBuilder();
@@ -28,6 +29,12 @@ builder.UseOrleans(siloBuilder =>
     {
         o.ClusterId = "pipe.cluster";
         o.ServiceId = "pipe";
+    });
+    siloBuilder.Configure<OrleansPipeConfiguration>(o =>
+    {
+        o.HeartbeatInterval = TimeSpan.FromSeconds(5);
+        o.HeartbeatTimeout = TimeSpan.FromSeconds(2);
+        o.ObserverExpiration = TimeSpan.FromMinutes(2);
     });
 });
 

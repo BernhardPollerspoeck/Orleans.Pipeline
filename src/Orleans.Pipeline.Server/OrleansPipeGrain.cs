@@ -1,23 +1,28 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Orleans.Pipeline.Shared;
 using Orleans.Utilities;
 
 namespace Orleans.Pipeline.Server;
 
 [KeepAlive]
-public abstract class OrleansPipeGrain<TToServer, TFromServer>(ILogger logger)
+public abstract class OrleansPipeGrain<TToServer, TFromServer>(
+    ILogger logger,
+    IOptions<OrleansPipeConfiguration> options)
     : Grain, IOrleansPipeGrain<TToServer, TFromServer>
 {
-    private static readonly TimeSpan HeartbeatPeriod = PipeConstants.HeartbeatInterval; 
-    private static readonly TimeSpan HeartbeatTimeout = TimeSpan.FromSeconds(2);
-
+    #region fields
     private IGrainTimer? _heartbeatTimer;
     private CancellationTokenSource _heartbeatCts = new();
 
-    private readonly ObserverManager<IOrleansPipeObserver<TFromServer>> _manager = new(TimeSpan.FromMinutes(2), logger);
-   
-    protected abstract Task OnData(TToServer data);
+    private readonly ObserverManager<IOrleansPipeObserver<TFromServer>> _manager = new(options.Value.ObserverExpiration, logger);
+    #endregion
 
+    #region abstract
+    protected abstract Task OnData(TToServer data);
+    #endregion
+
+    #region IOrleansPipeObserver
     protected Task Notify(TFromServer data)
     {
         return _manager.Notify(observer
@@ -28,14 +33,16 @@ public abstract class OrleansPipeGrain<TToServer, TFromServer>(ILogger logger)
                 Metadata = this.GetPrimaryKeyString(),
             }));
     }
+    #endregion
 
+    #region Grain
     public override Task OnActivateAsync(CancellationToken cancellationToken)
     {
         _heartbeatTimer = this.RegisterGrainTimer(PeriodicallySendHeartbeat, new GrainTimerCreationOptions()
         {
             Interleave = true, // allow interleaving so clients can still write data while heartbeat is running.
-            DueTime = HeartbeatPeriod,
-            Period = HeartbeatPeriod
+            DueTime = options.Value.HeartbeatInterval,
+            Period = options.Value.HeartbeatInterval,
         });
 
         return Task.CompletedTask;
@@ -48,7 +55,9 @@ public abstract class OrleansPipeGrain<TToServer, TFromServer>(ILogger logger)
 
         return Task.CompletedTask;
     }
+    #endregion
 
+    #region IOrleansPipeGrain
     public async Task Write(PipeTransferItem<TToServer> item)
     {
         if (logger.IsEnabled(LogLevel.Information))
@@ -76,10 +85,12 @@ public abstract class OrleansPipeGrain<TToServer, TFromServer>(ILogger logger)
         _manager.Unsubscribe(observer);
         return Task.CompletedTask;
     }
+    #endregion
 
+    #region helpers
     private async Task PeriodicallySendHeartbeat()
     {
-        if (_manager.Count == 0)
+        if (_manager.Count is 0)
         {
             _heartbeatTimer?.Dispose();
             _heartbeatTimer = null;
@@ -107,7 +118,7 @@ public abstract class OrleansPipeGrain<TToServer, TFromServer>(ILogger logger)
             hbTasks.Add(SendHeartbeat(observer, key));
         }
 
-        _heartbeatCts.CancelAfter(HeartbeatTimeout);
+        _heartbeatCts.CancelAfter(options.Value.HeartbeatTimeout);
         await foreach (var hbTask in Task.WhenEach(hbTasks).WithCancellation(_heartbeatCts.Token))
         {
             var observer = await hbTask;
@@ -133,7 +144,8 @@ public abstract class OrleansPipeGrain<TToServer, TFromServer>(ILogger logger)
         }
 
         static async Task<IOrleansPipeObserver<TFromServer>> SendHeartbeat(
-            IOrleansPipeObserver<TFromServer> observer, string metadata)
+            IOrleansPipeObserver<TFromServer> observer,
+            string metadata)
         {
             TaskCompletionSource<IOrleansPipeObserver<TFromServer>> tcs = new();
 
@@ -143,17 +155,18 @@ public abstract class OrleansPipeGrain<TToServer, TFromServer>(ILogger logger)
                 {
                     Item = default,
                     Metadata = metadata,
-                    Mode = TransferMode.Heartbeat
+                    Mode = TransferMode.Heartbeat,
                 });
 
                 tcs.SetResult(observer);
             }
             catch (Exception ex)
-            { 
+            {
                 tcs.SetException(ex);
             }
 
             return await tcs.Task;
         }
     }
+    #endregion
 }

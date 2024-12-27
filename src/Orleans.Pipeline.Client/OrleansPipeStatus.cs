@@ -4,5 +4,5 @@ public enum OrleansPipeStatus
 {
     Healthy,
     Recovering,
-    Broken
+    Broken,
 }

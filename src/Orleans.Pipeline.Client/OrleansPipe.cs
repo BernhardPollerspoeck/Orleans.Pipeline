@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Orleans.Pipeline.Shared;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -6,15 +7,15 @@ using System.Threading.Channels;
 
 namespace Orleans.Pipeline.Client;
 
-
-
 internal class OrleansPipe<TToServer, TFromServer>(
     IClusterClient clusterClient,
     ILogger<OrleansPipe<TToServer, TFromServer>> logger,
-    string id)
+    string id,
+    IOptions<OrleansPipeConfiguration> options)
     : IOrleansPipe<TToServer, TFromServer>
     , IOrleansPipeObserver<TFromServer>
 {
+    #region fields
     private readonly Channel<TToServer> _writer = Channel.CreateUnbounded<TToServer>();
     private readonly Channel<TFromServer> _reader = Channel.CreateUnbounded<TFromServer>();
 
@@ -27,10 +28,9 @@ internal class OrleansPipe<TToServer, TFromServer>(
     private OrleansPipeStatus _status = OrleansPipeStatus.Broken;
     private readonly SemaphoreSlim _reconnectionSemaphore = new(1, 1);
     private readonly CancellationTokenSource _observerStoppingTokenSource = new();
-    private static readonly long ExpectedHeartbeatIntervalTicks = PipeConstants.HeartbeatInterval.Ticks;
-    private static readonly TimeSpan ReconnectionDelay = TimeSpan.FromMilliseconds(100);
-    private const int MaxReconnectionAttempts = 3;
+    #endregion
 
+    #region IOrleansPipe<TToServer, TFromServer>
     public event Action<OrleansPipeStatus>? OnStatusChanged;
 
     public async Task Start(CancellationToken token)
@@ -82,12 +82,12 @@ internal class OrleansPipe<TToServer, TFromServer>(
 
     public async Task<bool> TryWriteAsync(TToServer item, CancellationToken cancellationToken)
     {
-        if (_status == OrleansPipeStatus.Broken)
+        if (_status is OrleansPipeStatus.Broken)
         {
             throw new BrokenOrleansPipeException("Cannot write to a broken pipe.");
         }
 
-        if ((DateTime.UtcNow.Ticks - Interlocked.Read(ref _lastHeartbeatTicks)) < ExpectedHeartbeatIntervalTicks)
+        if ((DateTime.UtcNow.Ticks - Interlocked.Read(ref _lastHeartbeatTicks)) < options.Value.ExpectedHeartbeatInterval.Ticks + options.Value.ExpectedHeartbeatIntervalGracePeriod.Ticks)
         {
             await _writer.Writer.WriteAsync(item, cancellationToken);
             return true;
@@ -102,15 +102,15 @@ internal class OrleansPipe<TToServer, TFromServer>(
         {
             UpdateStatus(OrleansPipeStatus.Recovering);
 
-            for (int i = 0; i < MaxReconnectionAttempts; i++)
+            for (var i = 0; i < options.Value.MaxReconnectionAttempts; i++)
             {
-                try 
+                try
                 {
                     await _grain.Subscribe(_observer);
                 }
-                catch 
+                catch
                 {
-                    await Task.Delay(ReconnectionDelay, cancellationToken);
+                    await Task.Delay(options.Value.ReconnectionDelay, cancellationToken);
                     continue;
                 }
 
@@ -133,9 +133,13 @@ internal class OrleansPipe<TToServer, TFromServer>(
         }
     }
 
-    public IAsyncEnumerable<TFromServer> ReadAllAsync(CancellationToken cancellationToken) =>
-        _reader.Reader.ReadAllAsync(cancellationToken);
+    public IAsyncEnumerable<TFromServer> ReadAllAsync(CancellationToken cancellationToken)
+    {
+        return _reader.Reader.ReadAllAsync(cancellationToken);
+    }
+    #endregion
 
+    #region IOrleansPipeObserver<TFromServer>
     public async Task ReceiveMessage(PipeTransferItem<TFromServer> message)
     {
         switch (message.Mode)
@@ -153,7 +157,9 @@ internal class OrleansPipe<TToServer, TFromServer>(
                 throw new NotSupportedException($"The transfer mode '{message.Mode}' is not supported");
         }
     }
+    #endregion
 
+    #region helpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void UpdateStatus(OrleansPipeStatus status)
     {
@@ -210,4 +216,5 @@ internal class OrleansPipe<TToServer, TFromServer>(
             }
         }
     }
+    #endregion
 }

@@ -1,11 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 
 namespace Orleans.Pipeline.Client;
 
 internal class OrleansPipelineClient(
     IClusterClient clusterClient,
-    ILoggerFactory loggerFactory)
+    ILoggerFactory loggerFactory,
+    IServiceProvider serviceProvider)
     : IOrleansPipelineClient
 {
     #region fields
@@ -25,7 +28,7 @@ internal class OrleansPipelineClient(
                 .Cast<IOrleansPipe<TToServer, TFromServer>>()
                 .FirstOrDefault();
 
-            if (resultPipe == null)
+            if (resultPipe is null)
             {
                 // Create a new pipe if none exists
                 resultPipe = CreatePipe<TToServer, TFromServer>(pipeKey);
@@ -43,7 +46,8 @@ internal class OrleansPipelineClient(
         return new OrleansPipe<TToServer, TFromServer>(
             clusterClient,
             loggerFactory.CreateLogger<OrleansPipe<TToServer, TFromServer>>(),
-            id);
+            id,
+            serviceProvider.GetRequiredService<IOptions<OrleansPipeConfiguration>>());
     }
     #endregion
 }

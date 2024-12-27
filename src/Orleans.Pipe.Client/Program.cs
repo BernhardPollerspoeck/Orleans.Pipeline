@@ -12,7 +12,13 @@ builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
 
-builder.AddOrleansPipeline();
+builder.AddOrleansPipeline(c =>
+{
+    c.MaxReconnectionAttempts = 3;
+    c.ReconnectionDelay = TimeSpan.FromMilliseconds(100);
+    c.ExpectedHeartbeatInterval = TimeSpan.FromSeconds(5);
+    c.ExpectedHeartbeatIntervalGracePeriod = TimeSpan.FromMilliseconds(150);
+});
 
 
 
