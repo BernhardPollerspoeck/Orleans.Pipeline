@@ -1,3 +1,5 @@
+name: nuget
+
 on:
   push:
     tags:
